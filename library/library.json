@@ -1,4 +1,44 @@
 {
   "aircraft_type": "AW139",
-  "inspections": {}
+  "inspections": {
+    "100H": {
+      "sections": {
+        "FUSELAGE": [
+          {
+            "task_id": "100H-FUS-01",
+            "description": "General fuselage visual inspection",
+            "routine": true
+          }
+        ],
+        "ENGINE": [
+          {
+            "task_id": "100H-ENG-01",
+            "description": "Check engine oil leaks",
+            "routine": true
+          }
+        ],
+        "MR": [
+          {
+            "task_id": "100H-MR-01",
+            "description": "Inspect main rotor head and blades",
+            "routine": true
+          }
+        ],
+        "TR": [
+          {
+            "task_id": "100H-TR-01",
+            "description": "Inspect tail rotor gearbox area",
+            "routine": true
+          }
+        ],
+        "AVIONICS": [
+          {
+            "task_id": "100H-AV-01",
+            "description": "Operational check of avionics systems",
+            "routine": true
+          }
+        ]
+      }
+    }
+  }
 }
