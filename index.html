@@ -1,118 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Maintenance System</title>
-
-<style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-}
-h1 {
-    margin-bottom: 10px;
-}
-.section {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-bottom: 15px;
-}
-.task {
-    margin-left: 20px;
-    padding: 5px 0;
-}
-input[type="number"] {
-    width: 60px;
-}
-button {
-    padding: 6px 12px;
-    margin-top: 10px;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Maintenance Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .section {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .task {
+      margin-left: 20px;
+    }
+    .task input {
+      width: 60px;
+      margin-left: 10px;
+    }
+  </style>
 </head>
-
 <body>
 
 <h1>Maintenance Dashboard</h1>
 
 <div class="section">
-    <label>Select Inspection:</label>
-    <select id="inspectionSelect"></select>
-    <button onclick="loadWorkPackage()">Load Work Package</button>
+  <label for="inspectionSelect"><strong>Select Inspection:</strong></label>
+  <select id="inspectionSelect">
+    <option value="100_HRS">100 HRS</option>
+    <option value="300_HRS">300 HRS</option>
+    <option value="600_HRS">600 HRS</option>
+  </select>
+  <button id="loadBtn">Load Work Package</button>
 </div>
 
 <div class="section">
-    <h3>Tasks</h3>
-    <div id="tasks"></div>
+  <h3>Tasks</h3>
+  <div id="tasks">No tasks loaded</div>
 </div>
 
 <div class="section">
-    <strong>Total Man-Hours:</strong>
-    <span id="totalMH">0</span>
+  <strong>Total Man-Hours:</strong>
+  <span id="totalMH">0</span>
 </div>
 
 <script>
 let libraryData = null;
+
+// ===== LOAD LIBRARY =====
 fetch("library/inspection_library.json")
-.then(res => {
+  .then(res => {
     if (!res.ok) throw new Error("Library fetch failed");
     return res.json();
-})
-.then(data => {
+  })
+  .then(data => {
     libraryData = data;
-    const select = document.getElementById("inspectionSelect");
-    Object.keys(data.inspections).forEach(key => {
-        const opt = document.createElement("option");
-        opt.value = key;
-        opt.textContent = key;
-        select.appendChild(opt);
+    console.log("Library loaded OK");
+  })
+  .catch(err => {
+    alert("Dashboard error: " + err.message);
+  });
+
+// ===== BUTTON =====
+document.getElementById("loadBtn").addEventListener("click", () => {
+  if (!libraryData) {
+    alert("Library not loaded yet");
+    return;
+  }
+  const inspKey = document.getElementById("inspectionSelect").value;
+  renderTasks(inspKey);
+});
+
+// ===== RENDER TASKS =====
+function renderTasks(inspectionKey) {
+  const container = document.getElementById("tasks");
+  container.innerHTML = "";
+  let totalMH = 0;
+
+  const inspection = libraryData.inspections[inspectionKey];
+  if (!inspection) {
+    container.innerHTML = "Inspection not found";
+    return;
+  }
+
+  for (const sectionName in inspection.sections) {
+    const sectionDiv = document.createElement("div");
+    sectionDiv.innerHTML = `<h4>${sectionName} (${inspectionKey})</h4>`;
+
+    inspection.sections[sectionName].forEach(task => {
+      const taskDiv = document.createElement("div");
+      taskDiv.className = "task";
+
+      taskDiv.innerHTML = `
+        <label>
+          ${task.task_id} - ${task.title}
+          <input type="number" min="0" step="0.1" value="0">
+        </label>
+      `;
+
+      const input = taskDiv.querySelector("input");
+      input.addEventListener("input", () => {
+        calculateTotal();
+      });
+
+      sectionDiv.appendChild(taskDiv);
     });
-})
-.catch(err => alert("Library error: " + err.message));
 
-function loadWorkPackage() {
-    if (!libraryData) {
-        alert("Library not loaded yet");
-        return;
-    }
+    container.appendChild(sectionDiv);
+  }
 
-    const insp = document.getElementById("inspectionSelect").value;
-    const tasksDiv = document.getElementById("tasks");
-    tasksDiv.innerHTML = "";
-    document.getElementById("totalMH").textContent = "0";
-
-    const sections = libraryData.inspections[insp];
-
-    Object.keys(sections).forEach(sectionName => {
-        const sectionTitle = document.createElement("h4");
-        sectionTitle.textContent = sectionName;
-        tasksDiv.appendChild(sectionTitle);
-
-        sections[sectionName].forEach(task => {
-            const div = document.createElement("div");
-            div.className = "task";
-
-            div.innerHTML = `
-                <strong>${task.id}</strong> — ${task.title}
-                <br>
-                MH:
-                <input type="number" min="0" step="0.1" value="0"
-                       onchange="updateTotal()">
-                <label>
-                    <input type="checkbox"> Done
-                </label>
-            `;
-            tasksDiv.appendChild(div);
-        });
-    });
+  calculateTotal();
 }
 
-function updateTotal() {
-    let total = 0;
-    document.querySelectorAll('input[type="number"]').forEach(i => {
-        total += Number(i.value) || 0;
-    });
-    document.getElementById("totalMH").textContent = total.toFixed(1);
+// ===== TOTAL MH =====
+function calculateTotal() {
+  let sum = 0;
+  document.querySelectorAll(".task input").forEach(i => {
+    sum += Number(i.value) || 0;
+  });
+  document.getElementById("totalMH").textContent = sum.toFixed(1);
 }
 </script>
 
