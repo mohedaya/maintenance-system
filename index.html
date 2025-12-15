@@ -2,182 +2,155 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AW139 Maintenance Dashboard</title>
-
+<title>AW139 Maintenance System</title>
 <style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-h1 { margin-bottom: 10px; }
-.section { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
-.task { margin-left: 20px; margin-bottom: 5px; }
-.nr { margin-left: 40px; color: #b00000; }
-input[type="number"] { width: 70px; margin-left: 10px; }
-.progress { font-weight: bold; }
-button { padding: 6px 12px; margin-top: 5px; }
+body{font-family:Arial;margin:20px}
+.section{border:1px solid #ccc;padding:10px;margin-bottom:15px}
+.task{margin-left:20px}
+.nr{margin-left:40px;color:#b00000}
+input[type=number]{width:70px}
+button{margin:4px}
+table{border-collapse:collapse;width:100%}
+td,th{border:1px solid #ccc;padding:5px}
 </style>
 </head>
-
 <body>
 
 <h1>AW139 Maintenance Dashboard</h1>
 
-<!-- CONTROL PANEL -->
+<!-- WORK PACKAGE -->
 <div class="section">
-  <strong>Select Inspection(s):</strong><br>
-  <select id="inspectionSelect" multiple size="6"></select><br><br>
-  <button id="loadBtn">Load Work Package</button>
+<b>Select Inspection(s)</b><br>
+<select id="inspSel" multiple size="6"></select><br>
+<button onclick="loadWP()">Load Work Package</button>
 </div>
 
-<!-- PROGRESS -->
+<!-- STATS -->
 <div class="section">
-  <div>Overall Progress: <span id="overallPct" class="progress">0%</span></div>
-  <div>Total Man-Hours: <span id="totalMH">0.0</span></div>
+Overall Progress: <span id="pct">0%</span><br>
+Total Man-Hours: <span id="mh">0.0</span>
 </div>
 
 <!-- TASKS -->
 <div class="section">
-  <h3>Tasks</h3>
-  <div id="tasks">No tasks loaded</div>
+<h3>Tasks</h3>
+<div id="tasks"></div>
 </div>
 
 <!-- NON ROUTINE -->
 <div class="section">
-  <h3>Add Non-Routine</h3>
-  NR No: <input id="nrNo"><br>
-  Section:
-  <select id="nrSection"></select><br>
-  Description:<br>
-  <textarea id="nrDesc" rows="3" cols="40"></textarea><br>
-  MH: <input type="number" id="nrMH" step="0.1"><br>
-  <button onclick="addNR()">Add NR</button>
+<h3>Non-Routine</h3>
+NR No <input id="nrNo">
+Section <input id="nrSec">
+Desc <input id="nrDesc">
+MH <input type="number" id="nrMH" step="0.1">
+<button onclick="addNR()">Add NR</button>
+</div>
+
+<!-- PARTS -->
+<div class="section">
+<h3>Parts / AOG</h3>
+Part No <input id="pno">
+Qty <input type="number" id="pqty">
+<button onclick="addPart()">Add Part</button>
+<table>
+<thead><tr><th>P/N</th><th>Qty</th></tr></thead>
+<tbody id="parts"></tbody>
+</table>
+</div>
+
+<!-- HISTORY -->
+<div class="section">
+<h3>Close Work Package</h3>
+<button onclick="closeWP()">Close & Save History</button>
+</div>
+
+<!-- REPORT -->
+<div class="section">
+<h3>Man-Hour Report</h3>
+<div id="report"></div>
 </div>
 
 <script>
-let libraryData;
-let workTasks = [];
-let nonRoutine = [];
+let lib, tasks=[], nr=[], parts=[], history=[];
 
-/* LOAD LIBRARY */
 fetch("./library/inspection_library.json")
-.then(r => r.json())
-.then(data => {
-  libraryData = data;
-  const sel = document.getElementById("inspectionSelect");
-  Object.keys(data.inspections).forEach(i => {
-    const o = document.createElement("option");
-    o.value = i;
-    o.textContent = i;
-    sel.appendChild(o);
+.then(r=>r.json())
+.then(d=>{
+  lib=d;
+  Object.keys(d.inspections).forEach(i=>{
+    let o=document.createElement("option");
+    o.textContent=i; o.value=i;
+    inspSel.appendChild(o);
   });
-})
-.catch(()=>alert("Library load error"));
+});
 
-document.getElementById("loadBtn").onclick = loadWP;
-
-/* LOAD WORK PACKAGE */
 function loadWP(){
-  workTasks = [];
-  nonRoutine = [];
-  document.getElementById("tasks").innerHTML = "";
-
-  const selected = [...inspectionSelect.selectedOptions].map(o=>o.value);
-  const sectionSet = new Set();
-
-  selected.forEach(insp=>{
-    libraryData.inspections[insp].sections.forEach(sec=>{
-      sectionSet.add(sec.section);
-      sec.tasks.forEach(t=>{
-        workTasks.push({
-          inspection: insp,
-          section: sec.section,
-          id: t.task_id,
-          title: t.title,
-          done: false,
-          mh: 0
-        });
+  tasks=[]; nr=[]; parts=[];
+  tasksDiv.innerHTML="";
+  [...inspSel.selectedOptions].map(o=>o.value).forEach(i=>{
+    lib.inspections[i].sections.forEach(s=>{
+      s.tasks.forEach(t=>{
+        tasks.push({i,sec:s.section,id:t.task_id,title:t.title,done:false,mh:0});
       });
     });
   });
-
-  renderTasks([...sectionSet]);
+  render();
 }
 
-/* RENDER TASKS */
-function renderTasks(sections){
-  const c = document.getElementById("tasks");
-  c.innerHTML = "";
-
-  sections.forEach(sec=>{
-    const div = document.createElement("div");
-    div.innerHTML = `<h4>${sec}</h4>`;
-    workTasks.filter(t=>t.section===sec).forEach(t=>{
-      const d = document.createElement("div");
-      d.className="task";
-      d.innerHTML = `
-        <input type="checkbox" onchange="toggleDone('${t.id}',this.checked)">
-        ${t.id} - ${t.title}
-        <input type="number" step="0.1" value="0"
-        onchange="setMH('${t.id}',this.value)">
+function render(){
+  tasksDiv.innerHTML="";
+  let secs=[...new Set(tasks.map(t=>t.sec))];
+  secs.forEach(s=>{
+    let d=document.createElement("div");
+    d.innerHTML=`<h4>${s}</h4>`;
+    tasks.filter(t=>t.sec===s).forEach(t=>{
+      let x=document.createElement("div");
+      x.className="task";
+      x.innerHTML=`
+      <input type=checkbox onchange="tDone('${t.id}',this.checked)">
+      ${t.id} - ${t.title}
+      <input type=number step=0.1 onchange="tMH('${t.id}',this.value)">
       `;
-      div.appendChild(d);
+      d.appendChild(x);
     });
-
-    nonRoutine.filter(n=>n.section===sec).forEach(n=>{
-      const d=document.createElement("div");
-      d.className="nr";
-      d.innerHTML=`NR ${n.nr}: ${n.desc} (MH ${n.mh})`;
-      div.appendChild(d);
+    nr.filter(n=>n.sec===s).forEach(n=>{
+      let x=document.createElement("div");
+      x.className="nr";
+      x.textContent=`NR ${n.no} ${n.desc} MH ${n.mh}`;
+      d.appendChild(x);
     });
-
-    c.appendChild(div);
+    tasksDiv.appendChild(d);
   });
-
-  updateStats();
-  fillNRSections(sections);
+  update();
 }
 
-/* EVENTS */
-function toggleDone(id,val){
-  const t=workTasks.find(x=>x.id===id);
-  t.done=val;
-  updateStats();
-}
-
-function setMH(id,val){
-  const t=workTasks.find(x=>x.id===id);
-  t.mh=parseFloat(val)||0;
-  updateStats();
-}
-
-/* NON ROUTINE */
-function fillNRSections(secs){
-  const s=document.getElementById("nrSection");
-  s.innerHTML="";
-  secs.forEach(x=>{
-    const o=document.createElement("option");
-    o.textContent=x;
-    s.appendChild(o);
-  });
-}
+function tDone(id,v){tasks.find(t=>t.id===id).done=v;update();}
+function tMH(id,v){tasks.find(t=>t.id===id).mh=+v||0;update();}
 
 function addNR(){
-  nonRoutine.push({
-    nr: nrNo.value,
-    section: nrSection.value,
-    desc: nrDesc.value,
-    mh: parseFloat(nrMH.value)||0
-  });
-  renderTasks([...new Set(workTasks.map(t=>t.section))]);
+  nr.push({no:nrNo.value,sec:nrSec.value,desc:nrDesc.value,mh:+nrMH.value||0});
+  render();
 }
 
-/* STATS */
-function updateStats(){
-  const done=workTasks.filter(t=>t.done).length;
-  const pct=workTasks.length?Math.round(done/workTasks.length*100):0;
-  document.getElementById("overallPct").textContent=pct+"%";
+function addPart(){
+  parts.push({p:pno.value,q:+pqty.value||0});
+  let r=document.createElement("tr");
+  r.innerHTML=`<td>${pno.value}</td><td>${pqty.value}</td>`;
+  partsDiv.appendChild(r);
+}
 
-  let mh=workTasks.reduce((a,b)=>a+b.mh,0);
-  mh+=nonRoutine.reduce((a,b)=>a+b.mh,0);
-  document.getElementById("totalMH").textContent=mh.toFixed(1);
+function update(){
+  let done=tasks.filter(t=>t.done).length;
+  pct.textContent=tasks.length?Math.round(done/tasks.length*100)+"%":"0%";
+  let mhv=tasks.reduce((a,b)=>a+b.mh,0)+nr.reduce((a,b)=>a+b.mh,0);
+  mh.textContent=mhv.toFixed(1);
+  report.innerHTML=`Tasks MH: ${mhv.toFixed(1)}`;
+}
+
+function closeWP(){
+  history.push({date:new Date(),tasks,nr,parts});
+  alert("Work package closed and saved (browser)");
 }
 </script>
 
