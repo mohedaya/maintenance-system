@@ -2,102 +2,182 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Maintenance Dashboard</title>
+<title>AW139 Maintenance Dashboard</title>
 
 <style>
 body { font-family: Arial, sans-serif; margin: 20px; }
+h1 { margin-bottom: 10px; }
 .section { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
-.task { margin-left: 20px; }
+.task { margin-left: 20px; margin-bottom: 5px; }
+.nr { margin-left: 40px; color: #b00000; }
 input[type="number"] { width: 70px; margin-left: 10px; }
-button { padding: 6px 12px; }
+.progress { font-weight: bold; }
+button { padding: 6px 12px; margin-top: 5px; }
 </style>
 </head>
 
 <body>
 
-<h1>Maintenance Dashboard</h1>
+<h1>AW139 Maintenance Dashboard</h1>
 
+<!-- CONTROL PANEL -->
 <div class="section">
-  <label><strong>Select Inspection:</strong></label>
-  <select id="inspectionSelect"></select>
+  <strong>Select Inspection(s):</strong><br>
+  <select id="inspectionSelect" multiple size="6"></select><br><br>
   <button id="loadBtn">Load Work Package</button>
 </div>
 
+<!-- PROGRESS -->
+<div class="section">
+  <div>Overall Progress: <span id="overallPct" class="progress">0%</span></div>
+  <div>Total Man-Hours: <span id="totalMH">0.0</span></div>
+</div>
+
+<!-- TASKS -->
 <div class="section">
   <h3>Tasks</h3>
   <div id="tasks">No tasks loaded</div>
 </div>
 
+<!-- NON ROUTINE -->
 <div class="section">
-  <strong>Total Man-Hours:</strong>
-  <span id="totalMH">0.0</span>
+  <h3>Add Non-Routine</h3>
+  NR No: <input id="nrNo"><br>
+  Section:
+  <select id="nrSection"></select><br>
+  Description:<br>
+  <textarea id="nrDesc" rows="3" cols="40"></textarea><br>
+  MH: <input type="number" id="nrMH" step="0.1"><br>
+  <button onclick="addNR()">Add NR</button>
 </div>
 
 <script>
-let libraryData = null;
+let libraryData;
+let workTasks = [];
+let nonRoutine = [];
 
-/* ===== LOAD LIBRARY ===== */
+/* LOAD LIBRARY */
 fetch("./library/inspection_library.json")
-  .then(res => {
-    if (!res.ok) throw new Error("Library fetch failed");
-    return res.json();
-  })
-  .then(data => {
-    libraryData = data;
-    const select = document.getElementById("inspectionSelect");
-    Object.keys(data.inspections).forEach(key => {
-      const opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = key;
-      select.appendChild(opt);
+.then(r => r.json())
+.then(data => {
+  libraryData = data;
+  const sel = document.getElementById("inspectionSelect");
+  Object.keys(data.inspections).forEach(i => {
+    const o = document.createElement("option");
+    o.value = i;
+    o.textContent = i;
+    sel.appendChild(o);
+  });
+})
+.catch(()=>alert("Library load error"));
+
+document.getElementById("loadBtn").onclick = loadWP;
+
+/* LOAD WORK PACKAGE */
+function loadWP(){
+  workTasks = [];
+  nonRoutine = [];
+  document.getElementById("tasks").innerHTML = "";
+
+  const selected = [...inspectionSelect.selectedOptions].map(o=>o.value);
+  const sectionSet = new Set();
+
+  selected.forEach(insp=>{
+    libraryData.inspections[insp].sections.forEach(sec=>{
+      sectionSet.add(sec.section);
+      sec.tasks.forEach(t=>{
+        workTasks.push({
+          inspection: insp,
+          section: sec.section,
+          id: t.task_id,
+          title: t.title,
+          done: false,
+          mh: 0
+        });
+      });
     });
-  })
-  .catch(err => alert(err.message));
+  });
 
-/* ===== BUTTON ===== */
-document.getElementById("loadBtn").addEventListener("click", () => {
-  const insp = document.getElementById("inspectionSelect").value;
-  renderTasks(insp);
-});
+  renderTasks([...sectionSet]);
+}
 
-/* ===== RENDER TASKS (FIXED) ===== */
-function renderTasks(inspKey) {
-  const container = document.getElementById("tasks");
-  container.innerHTML = "";
-  document.getElementById("totalMH").textContent = "0.0";
+/* RENDER TASKS */
+function renderTasks(sections){
+  const c = document.getElementById("tasks");
+  c.innerHTML = "";
 
-  const inspection = libraryData.inspections[inspKey];
-  if (!inspection) {
-    container.textContent = "Inspection not found";
-    return;
-  }
-
-  inspection.sections.forEach(sec => {
-    const secDiv = document.createElement("div");
-    secDiv.innerHTML = `<h4>${sec.section} (${inspKey})</h4>`;
-
-    sec.tasks.forEach(task => {
-      const taskDiv = document.createElement("div");
-      taskDiv.className = "task";
-      taskDiv.innerHTML = `
-        ${task.task_id} - ${task.title}
-        <input type="number" min="0" step="0.1" value="0"
-               oninput="calculateTotal()">
+  sections.forEach(sec=>{
+    const div = document.createElement("div");
+    div.innerHTML = `<h4>${sec}</h4>`;
+    workTasks.filter(t=>t.section===sec).forEach(t=>{
+      const d = document.createElement("div");
+      d.className="task";
+      d.innerHTML = `
+        <input type="checkbox" onchange="toggleDone('${t.id}',this.checked)">
+        ${t.id} - ${t.title}
+        <input type="number" step="0.1" value="0"
+        onchange="setMH('${t.id}',this.value)">
       `;
-      secDiv.appendChild(taskDiv);
+      div.appendChild(d);
     });
 
-    container.appendChild(secDiv);
+    nonRoutine.filter(n=>n.section===sec).forEach(n=>{
+      const d=document.createElement("div");
+      d.className="nr";
+      d.innerHTML=`NR ${n.nr}: ${n.desc} (MH ${n.mh})`;
+      div.appendChild(d);
+    });
+
+    c.appendChild(div);
+  });
+
+  updateStats();
+  fillNRSections(sections);
+}
+
+/* EVENTS */
+function toggleDone(id,val){
+  const t=workTasks.find(x=>x.id===id);
+  t.done=val;
+  updateStats();
+}
+
+function setMH(id,val){
+  const t=workTasks.find(x=>x.id===id);
+  t.mh=parseFloat(val)||0;
+  updateStats();
+}
+
+/* NON ROUTINE */
+function fillNRSections(secs){
+  const s=document.getElementById("nrSection");
+  s.innerHTML="";
+  secs.forEach(x=>{
+    const o=document.createElement("option");
+    o.textContent=x;
+    s.appendChild(o);
   });
 }
 
-/* ===== TOTAL MH ===== */
-function calculateTotal() {
-  let sum = 0;
-  document.querySelectorAll(".task input").forEach(i => {
-    sum += Number(i.value) || 0;
+function addNR(){
+  nonRoutine.push({
+    nr: nrNo.value,
+    section: nrSection.value,
+    desc: nrDesc.value,
+    mh: parseFloat(nrMH.value)||0
   });
-  document.getElementById("totalMH").textContent = sum.toFixed(1);
+  renderTasks([...new Set(workTasks.map(t=>t.section))]);
+}
+
+/* STATS */
+function updateStats(){
+  const done=workTasks.filter(t=>t.done).length;
+  const pct=workTasks.length?Math.round(done/workTasks.length*100):0;
+  document.getElementById("overallPct").textContent=pct+"%";
+
+  let mh=workTasks.reduce((a,b)=>a+b.mh,0);
+  mh+=nonRoutine.reduce((a,b)=>a+b.mh,0);
+  document.getElementById("totalMH").textContent=mh.toFixed(1);
 }
 </script>
 
