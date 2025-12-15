@@ -1,125 +1,126 @@
 {
-  "aircraft_type": "AW139",
-  "pdf_path": "library/pdf/",
+  "aircraft": "AW139",
 
   "inspections": {
-    "50H": {
-      "pdf": "AW139_50H.pdf",
-      "sections": {
-        "ENGINE": [
-          { "task_id": "50H-ENG-01", "description": "General engine visual inspection", "routine": true }
-        ]
-      }
-    },
-
-    "100H": {
-      "pdf": "AW139_100H.pdf",
+    "100_HRS": {
+      "name": "100 Hours Inspection",
+      "type": "HOURS",
+      "interval": 100,
       "sections": {
         "FUSELAGE": [
-          { "task_id": "100H-FUS-01", "description": "General fuselage visual inspection", "routine": true },
-          { "task_id": "100H-FUS-02", "description": "Inspect fuselage panels and fasteners", "routine": true }
+          {
+            "task_id": "100-FUS-01",
+            "title": "General fuselage visual inspection",
+            "routine": true
+          }
         ],
         "ENGINE": [
-          { "task_id": "100H-ENG-01", "description": "Check engine oil leaks", "routine": true }
+          {
+            "task_id": "100-ENG-01",
+            "title": "Check engine oil leaks",
+            "routine": true
+          }
         ],
-        "MR": [
-          { "task_id": "100H-MR-01", "description": "Inspect main rotor head and blades", "routine": true }
-        ],
-        "TR": [
-          { "task_id": "100H-TR-01", "description": "Inspect tail rotor gearbox area", "routine": true }
-        ],
-        "AVIONICS": [
-          { "task_id": "100H-AV-01", "description": "Operational check of avionics systems", "routine": true }
+        "ROTOR": [
+          {
+            "task_id": "100-ROT-01",
+            "title": "Inspect main rotor head",
+            "routine": true
+          }
         ]
       }
     },
 
-    "300H": {
-      "pdf": "AW139_300H.pdf",
+    "300_HRS": {
+      "name": "300 Hours Inspection",
+      "type": "HOURS",
+      "interval": 300,
       "sections": {
         "ENGINE": [
-          { "task_id": "300H-ENG-01", "description": "300-hour engine inspection", "routine": true }
+          {
+            "task_id": "300-ENG-01",
+            "title": "Engine general condition inspection",
+            "routine": false
+          }
         ]
       }
     },
 
-    "600H": {
-      "pdf": "AW139_600H.pdf",
+    "600_HRS": {
+      "name": "600 Hours Inspection",
+      "type": "HOURS",
+      "interval": 600,
       "sections": {
         "ENGINE": [
-          { "task_id": "600H-ENG-01", "description": "600-hour engine inspection", "routine": true }
+          {
+            "task_id": "600-ENG-01",
+            "title": "Engine detailed inspection",
+            "routine": false
+          }
         ]
       }
     },
 
-    "1200H": {
-      "pdf": "AW139_1200H.pdf",
+    "1200_HRS": {
+      "name": "1200 Hours Inspection",
+      "type": "HOURS",
+      "interval": 1200,
       "sections": {
-        "ENGINE": [
-          { "task_id": "1200H-ENG-01", "description": "1200-hour engine inspection", "routine": true }
+        "AIRFRAME": [
+          {
+            "task_id": "1200-AIR-01",
+            "title": "Complete airframe inspection",
+            "routine": false
+          }
         ]
       }
     },
 
-    "2400H": {
-      "pdf": "AW139_2400H.pdf",
-      "sections": {
-        "ENGINE": [
-          { "task_id": "2400H-ENG-01", "description": "2400-hour engine inspection", "routine": true }
-        ]
-      }
-    },
-
-    "1Y": {
-      "pdf": "AW139_1Y.pdf",
+    "1_YEAR": {
+      "name": "1 Year Inspection",
+      "type": "CALENDAR",
+      "interval": "1 YEAR",
       "sections": {
         "FUSELAGE": [
-          { "task_id": "1Y-FUS-01", "description": "One-year structural inspection", "routine": true }
+          {
+            "task_id": "1Y-FUS-01",
+            "title": "Corrosion inspection",
+            "routine": false
+          }
         ]
       }
     },
 
-    "2Y": {
-      "pdf": "AW139_2Y.pdf",
+    "2_YEAR": {
+      "name": "2 Year Inspection",
+      "type": "CALENDAR",
+      "interval": "2 YEAR",
       "sections": {
-        "FUSELAGE": [
-          { "task_id": "2Y-FUS-01", "description": "Two-year structural inspection", "routine": true }
+        "STRUCTURE": [
+          {
+            "task_id": "2Y-STR-01",
+            "title": "Structural detailed inspection",
+            "routine": false
+          }
         ]
       }
     },
 
-    "4Y": {
-      "pdf": "AW139_4Y.pdf",
+    "ENGINE_SPECIAL": {
+      "name": "Engine Special Inspections",
+      "type": "ENGINE",
       "sections": {
-        "FUSELAGE": [
-          { "task_id": "4Y-FUS-01", "description": "Four-year major structural inspection", "routine": true }
-        ]
-      }
-    },
-
-    "ENG_300H_FUEL_NOZZLE": {
-      "pdf": "ENG_300H_FUEL_NOZZLE.pdf",
-      "sections": {
-        "ENGINE": [
-          { "task_id": "ENG300-FN-01", "description": "300-hour fuel nozzle replacement", "routine": true }
-        ]
-      }
-    },
-
-    "ENG_600H_FUEL_NOZZLE": {
-      "pdf": "ENG_600H_FUEL_NOZZLE.pdf",
-      "sections": {
-        "ENGINE": [
-          { "task_id": "ENG600-FN-01", "description": "600-hour fuel nozzle replacement", "routine": true }
-        ]
-      }
-    },
-
-    "ENG_900H_INSPECTION": {
-      "pdf": "ENG_900H_INSPECTION.pdf",
-      "sections": {
-        "ENGINE": [
-          { "task_id": "ENG900-01", "description": "900-hour engine inspection", "routine": true }
+        "FUEL": [
+          {
+            "task_id": "ENG-FUEL-300",
+            "title": "Fuel nozzle replacement – 300 HRS",
+            "routine": false
+          },
+          {
+            "task_id": "ENG-FUEL-600",
+            "title": "Fuel nozzle replacement – 600 HRS",
+            "routine": false
+          }
         ]
       }
     }
