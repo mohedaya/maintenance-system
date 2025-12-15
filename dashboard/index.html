@@ -1,85 +1,675 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AW139 Maintenance Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { margin-bottom: 10px; }
-    .section { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
-    .task { display: flex; gap: 10px; margin: 5px 0; }
-    .task input[type="number"] { width: 70px; }
+    :root{
+      --bg:#0b1220;
+      --card:#121a2b;
+      --card2:#0f1728;
+      --text:#e7eefc;
+      --muted:#aab7d6;
+      --line:#223055;
+      --accent:#3b82f6;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --chip:#1b2a4d;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b1220 0%,#070c16 100%);color:var(--text);font-family:Arial,system-ui,-apple-system,sans-serif}
+    header{padding:18px 18px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,18,32,.92);backdrop-filter:blur(6px);z-index:10}
+    h1{margin:0;font-size:18px}
+    .sub{margin-top:6px;color:var(--muted);font-size:12px}
+    .wrap{padding:18px;max-width:1200px;margin:0 auto}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:980px){ .grid{grid-template-columns:380px 1fr} }
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+    .card h2{margin:0 0 10px;font-size:14px;color:#dbe7ff}
+    label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
+    input,select,textarea{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);padding:10px;border-radius:10px;outline:none}
+    textarea{min-height:74px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{background:var(--accent);border:none;color:white;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+    button.secondary{background:#223055}
+    button.danger{background:var(--bad)}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--line);color:#dbe7ff;font-size:12px}
+    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .kpi .box{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px}
+    .kpi .val{font-size:18px;font-weight:800;margin-top:6px}
+    .bar{height:10px;background:#0b1220;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+    .bar > div{height:100%;background:linear-gradient(90deg,#3b82f6,#22c55e)}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .tab{background:var(--card2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:12px;cursor:pointer;font-size:12px}
+    .tab.active{border-color:#4b6bbf;box-shadow:0 0 0 2px rgba(59,130,246,.18) inset}
+    .section{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+    .sectionHead{display:flex;align-items:center;justify-content:space-between;padding:12px 12px;border-bottom:1px solid var(--line)}
+    .sectionTitle{font-size:13px;font-weight:800}
+    .sectionMeta{display:flex;gap:8px;align-items:center}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
+    .table th{color:var(--muted);font-weight:700;text-align:left;background:rgba(15,23,40,.5)}
+    .muted{color:var(--muted);font-size:12px}
+    .taskTitle{font-weight:700}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--line);font-size:11px;color:#dbe7ff}
+    .ok{color:var(--ok)}
+    .warn{color:var(--warn)}
+    .bad{color:var(--bad)}
+    .right{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+    .smallInput{width:90px}
+    .tiny{font-size:11px;color:var(--muted)}
+    .footerNote{margin-top:10px;color:var(--muted);font-size:11px}
+    .sep{height:1px;background:var(--line);margin:12px 0}
   </style>
 </head>
 <body>
+<header>
+  <h1>AW139 Maintenance Dashboard</h1>
+  <div class="sub">
+    <span class="pill">No server</span>
+    <span class="pill">Library → Dashboard ✅</span>
+    <span class="pill">Auto-save (browser)</span>
+  </div>
+</header>
 
-<h1>AW139 Maintenance Dashboard</h1>
+<div class="wrap">
+  <div class="grid">
 
-<label><b>Select Inspection(s):</b></label><br>
-<select id="inspectionSelect" multiple size="8"></select>
-<br><br>
-<button onclick="loadTasks()">Load Tasks</button>
+    <!-- LEFT: CONTROL PANEL -->
+    <div class="card">
+      <h2>Work Package Setup</h2>
 
-<hr>
+      <div class="row">
+        <div>
+          <label>A/C Reg</label>
+          <input id="acReg" placeholder="A6-XXX" />
+        </div>
+        <div>
+          <label>S/N</label>
+          <input id="acSN" placeholder="Serial Number" />
+        </div>
+      </div>
 
-<div id="tasksContainer"></div>
+      <div class="row">
+        <div>
+          <label>TT</label>
+          <input id="acTT" placeholder="Total Time" />
+        </div>
+        <div>
+          <label>TC</label>
+          <input id="acTC" placeholder="Total Cycles" />
+        </div>
+      </div>
+
+      <label>Select Inspection(s) (multiple)</label>
+      <select id="inspSelect" multiple size="10"></select>
+
+      <div class="btns">
+        <button id="btnLoad">Load Work Package</button>
+        <button class="secondary" id="btnSave">Save</button>
+        <button class="secondary" id="btnClear">Clear WP</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <h2>Non-Routine Entry</h2>
+      <div class="row">
+        <div>
+          <label>Section / Team</label>
+          <select id="nrSection">
+            <option>FUSELAGE</option>
+            <option>ENGINE</option>
+            <option>MR</option>
+            <option>TR</option>
+            <option>AVIONICS</option>
+          </select>
+        </div>
+        <div>
+          <label>NR Number</label>
+          <input id="nrNo" placeholder="NR-50" />
+        </div>
+      </div>
+      <label>NR Description</label>
+      <textarea id="nrDesc" placeholder="Write finding / defect..."></textarea>
+      <div class="row">
+        <div>
+          <label>Related Inspection</label>
+          <select id="nrInsp"></select>
+        </div>
+        <div>
+          <label>Actual MH</label>
+          <input id="nrMH" type="number" min="0" step="0.1" placeholder="0.0" />
+        </div>
+      </div>
+      <div class="btns">
+        <button class="secondary" id="btnAddNR">Add Non-Routine</button>
+      </div>
+
+      <div class="footerNote">
+        Library is read-only. Dashboard saves live data locally (browser).
+      </div>
+    </div>
+
+    <!-- RIGHT: DASHBOARD -->
+    <div>
+      <div class="card">
+        <h2>Overview</h2>
+        <div class="kpi">
+          <div class="box">
+            <div class="muted">Overall Progress</div>
+            <div class="val" id="kpiProgress">0%</div>
+            <div class="bar"><div id="barProgress" style="width:0%"></div></div>
+          </div>
+          <div class="box">
+            <div class="muted">Total Actual Man-Hours</div>
+            <div class="val" id="kpiMH">0.0</div>
+            <div class="tiny">Sum of all entered MH (routine + non-routine)</div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="tabs" id="tabs"></div>
+        <div class="muted" id="metaLine">Load a work package to view tasks.</div>
+      </div>
+
+      <div id="sections"></div>
+    </div>
+
+  </div>
+</div>
 
 <script>
+/** =========================
+ *  CONFIG / STATE
+ *  ========================= */
 const LIBRARY_URL = "../library/library.json";
-let libraryData = {};
-let workData = {};
+const TEAMS = ["FUSELAGE", "ENGINE", "MR", "TR", "AVIONICS"]; // locked
+const STORAGE_KEY = "MS_WP_V1"; // browser storage for this dashboard
 
-fetch(LIBRARY_URL)
-  .then(res => res.json())
-  .then(data => {
-    libraryData = data.inspections;
-    const select = document.getElementById("inspectionSelect");
-    Object.keys(libraryData).forEach(ins => {
-      const opt = document.createElement("option");
-      opt.value = ins;
-      opt.textContent = ins;
-      select.appendChild(opt);
-    });
-  });
+let library = null;     // full library json
+let wp = null;          // work package state
 
-function loadTasks() {
-  const container = document.getElementById("tasksContainer");
-  container.innerHTML = "";
-  workData = {};
+/** =========================
+ *  HELPERS
+ *  ========================= */
+function safeJsonParse(s, fallback=null){
+  try { return JSON.parse(s); } catch { return fallback; }
+}
+function fmtPct(n){ return `${Math.round(n)}%`; }
+function num(v){ const x = parseFloat(v); return Number.isFinite(x) ? x : 0; }
+function uniqBy(arr, keyFn){
+  const seen = new Set();
+  const out = [];
+  for(const item of arr){
+    const k = keyFn(item);
+    if(seen.has(k)) continue;
+    seen.add(k);
+    out.push(item);
+  }
+  return out;
+}
+function nowISO(){ return new Date().toISOString(); }
 
-  const selected = Array.from(
-    document.getElementById("inspectionSelect").selectedOptions
-  ).map(o => o.value);
+/** =========================
+ *  LOAD LIBRARY
+ *  ========================= */
+async function loadLibrary(){
+  const res = await fetch(LIBRARY_URL, { cache: "no-store" });
+  if(!res.ok) throw new Error(`Library fetch failed: ${res.status}`);
+  library = await res.json();
 
-  selected.forEach(ins => {
-    const sections = libraryData[ins].sections;
-    Object.keys(sections).forEach(sec => {
-      if (!workData[sec]) workData[sec] = [];
-      sections[sec].forEach(task => {
-        if (!workData[sec].some(t => t.task_id === task.task_id)) {
-          workData[sec].push({ ...task, done: false, mh: 0 });
-        }
-      });
-    });
-  });
+  // Fill inspection selectors
+  const inspKeys = Object.keys(library.inspections || {});
+  const inspSelect = document.getElementById("inspSelect");
+  const nrInsp = document.getElementById("nrInsp");
+  inspSelect.innerHTML = "";
+  nrInsp.innerHTML = "";
 
-  Object.keys(workData).forEach(sec => {
-    const div = document.createElement("div");
-    div.className = "section";
-    div.innerHTML = `<h3>${sec}</h3>`;
-    workData[sec].forEach(task => {
-      div.innerHTML += `
-        <div class="task">
-          <input type="checkbox" onchange="task.done=this.checked">
-          <span>${task.task_id} - ${task.description}</span>
-          <input type="number" placeholder="MH" min="0" step="0.1"
-                 onchange="task.mh=this.value">
-        </div>`;
-    });
-    container.appendChild(div);
+  for(const k of inspKeys){
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = k;
+    inspSelect.appendChild(opt);
+
+    const opt2 = document.createElement("option");
+    opt2.value = k;
+    opt2.textContent = k;
+    nrInsp.appendChild(opt2);
+  }
+}
+
+/** =========================
+ *  BUILD / LOAD WORK PACKAGE
+ *  ========================= */
+function buildWorkPackage(selectedInspections){
+  const inspections = library.inspections;
+
+  // Tasks come from selected inspections; keep inspection info per task
+  let tasks = [];
+  for(const insp of selectedInspections){
+    const secMap = inspections[insp]?.sections || {};
+    for(const sec of Object.keys(secMap)){
+      const list = secMap[sec] || [];
+      for(const t of list){
+        tasks.push({
+          task_id: t.task_id,
+          description: t.description ?? t.title ?? "",
+          routine: !!t.routine,
+          section: sec,
+          inspection: insp
+        });
+      }
+    }
+  }
+
+  // Deduplicate by task_id + inspection (safe), then standardize section key to your 5 teams if possible
+  tasks = uniqBy(tasks, t => `${t.inspection}::${t.task_id}`);
+
+  // Create WP state
+  const wpState = {
+    version: 1,
+    created_at: nowISO(),
+    updated_at: nowISO(),
+    aircraft: {
+      reg: document.getElementById("acReg").value.trim(),
+      sn: document.getElementById("acSN").value.trim(),
+      tt: document.getElementById("acTT").value.trim(),
+      tc: document.getElementById("acTC").value.trim()
+    },
+    selected_inspections: selectedInspections,
+    // execution data indexed by key: inspection::task_id
+    task_exec: {},
+    non_routine: [] // {nr_no, section, inspection, desc, mh, done}
+  };
+
+  for(const t of tasks){
+    const key = `${t.inspection}::${t.task_id}`;
+    wpState.task_exec[key] = {
+      task_id: t.task_id,
+      inspection: t.inspection,
+      section: t.section,
+      description: t.description,
+      routine: t.routine,
+      done: false,
+      mh: "" // manual entry
+    };
+  }
+
+  return wpState;
+}
+
+function loadWpFromStorage(){
+  const s = localStorage.getItem(STORAGE_KEY);
+  const parsed = safeJsonParse(s, null);
+  if(!parsed) return null;
+  return parsed;
+}
+
+function saveWpToStorage(){
+  if(!wp) return;
+  wp.updated_at = nowISO();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(wp));
+}
+
+function clearWpStorage(){
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+/** =========================
+ *  RENDER
+ *  ========================= */
+let activeTab = "ALL"; // ALL or inspection key
+
+function render(){
+  const meta = document.getElementById("metaLine");
+  const tabs = document.getElementById("tabs");
+  const sectionsEl = document.getElementById("sections");
+
+  if(!wp){
+    tabs.innerHTML = "";
+    sectionsEl.innerHTML = "";
+    meta.textContent = "Load a work package to view tasks.";
+    setKPIs();
+    return;
+  }
+
+  // Tabs: ALL + each inspection
+  const inspList = wp.selected_inspections || [];
+  tabs.innerHTML = "";
+  const makeTab = (id, label) => {
+    const b = document.createElement("button");
+    b.className = "tab" + (activeTab===id ? " active" : "");
+    b.textContent = label;
+    b.onclick = () => { activeTab = id; render(); };
+    tabs.appendChild(b);
+  };
+  makeTab("ALL", "ALL");
+  inspList.forEach(i => makeTab(i, i));
+
+  // Meta line
+  meta.innerHTML = `
+    <span class="pill">A/C: ${wp.aircraft.reg || "—"}</span>
+    <span class="pill">TT: ${wp.aircraft.tt || "—"}</span>
+    <span class="pill">TC: ${wp.aircraft.tc || "—"}</span>
+    <span class="pill">S/N: ${wp.aircraft.sn || "—"}</span>
+    <span class="pill">Inspections: ${inspList.length}</span>
+  `;
+
+  // Build list of visible tasks based on activeTab
+  const allExec = Object.values(wp.task_exec || {});
+  const visibleExec = (activeTab === "ALL")
+    ? allExec
+    : allExec.filter(t => t.inspection === activeTab);
+
+  // Group by section (use locked teams order; also support any extra section names)
+  const sectionNames = [...new Set(visibleExec.map(t => t.section))];
+  const orderedSections = [
+    ...TEAMS.filter(s => sectionNames.includes(s)),
+    ...sectionNames.filter(s => !TEAMS.includes(s)).sort()
+  ];
+
+  sectionsEl.innerHTML = "";
+  for(const sec of orderedSections){
+    const secTasks = visibleExec.filter(t => t.section === sec);
+
+    const secPct = calcPct(secTasks);
+    const secMH = sumMH(secTasks) + sumNRMH(sec, activeTab);
+
+    const secDiv = document.createElement("div");
+    secDiv.className = "section";
+
+    secDiv.innerHTML = `
+      <div class="sectionHead">
+        <div>
+          <div class="sectionTitle">${sec}</div>
+          <div class="muted">Tasks: ${secTasks.length} • Done: ${secTasks.filter(t=>t.done).length} • MH: ${secMH.toFixed(1)}</div>
+        </div>
+        <div class="sectionMeta">
+          <span class="pill">${fmtPct(secPct)}</span>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:70px;">Done</th>
+            <th>Task</th>
+            <th style="width:140px;">Inspection</th>
+            <th style="width:120px;">Actual MH</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${secTasks.map(t => rowTask(t)).join("")}
+          ${renderNRRows(sec).join("")}
+        </tbody>
+      </table>
+    `;
+    sectionsEl.appendChild(secDiv);
+  }
+
+  setKPIs();
+}
+
+function rowTask(t){
+  const key = `${t.inspection}::${t.task_id}`;
+  const done = !!t.done;
+  const mhVal = (t.mh ?? "");
+  const routine = t.routine ? "Routine" : "Non-Routine";
+  const badge = t.routine ? `<span class="chip"><span class="ok">●</span>${routine}</span>` :
+                            `<span class="chip"><span class="warn">●</span>${routine}</span>`;
+  return `
+    <tr>
+      <td>
+        <input type="checkbox" ${done ? "checked":""}
+          onchange="onToggleDone('${escapeAttr(key)}', this.checked)">
+      </td>
+      <td>
+        <div class="taskTitle">${escapeHtml(t.task_id)} — ${escapeHtml(t.description || "")}</div>
+        <div class="chips">
+          ${badge}
+          <span class="chip">Section: ${escapeHtml(t.section)}</span>
+        </div>
+      </td>
+      <td><span class="chip">${escapeHtml(t.inspection)}</span></td>
+      <td>
+        <input class="smallInput" type="number" min="0" step="0.1" value="${escapeAttr(mhVal)}"
+          oninput="onSetMH('${escapeAttr(key)}', this.value)">
+      </td>
+    </tr>
+  `;
+}
+
+function renderNRRows(sec){
+  // Only show NR tasks for this section AND within active tab (unless ALL)
+  const list = (wp.non_routine || []).filter(nr => nr.section === sec);
+  const filtered = (activeTab==="ALL") ? list : list.filter(nr => nr.inspection === activeTab);
+  return filtered.map((nr, idx) => {
+    const key = nr.__key;
+    const done = !!nr.done;
+    return `
+      <tr>
+        <td>
+          <input type="checkbox" ${done ? "checked":""}
+            onchange="onToggleNR('${escapeAttr(key)}', this.checked)">
+        </td>
+        <td>
+          <div class="taskTitle">NR ${escapeHtml(nr.nr_no || "—")} — ${escapeHtml(nr.desc || "")}</div>
+          <div class="chips">
+            <span class="chip"><span class="bad">●</span>Non-Routine</span>
+            <span class="chip">Section: ${escapeHtml(nr.section)}</span>
+          </div>
+        </td>
+        <td><span class="chip">${escapeHtml(nr.inspection)}</span></td>
+        <td>
+          <input class="smallInput" type="number" min="0" step="0.1" value="${escapeAttr(nr.mh ?? "")}"
+            oninput="onSetNRMH('${escapeAttr(key)}', this.value)">
+        </td>
+      </tr>
+    `;
   });
 }
-</script>
 
+function calcPct(list){
+  if(!list || list.length===0) return 0;
+  const done = list.filter(t => t.done).length;
+  return (done / list.length) * 100;
+}
+function sumMH(list){
+  return (list||[]).reduce((a,t)=> a + num(t.mh), 0);
+}
+function sumNRMH(section=null, inspOrAll="ALL"){
+  const list = (wp?.non_routine || []);
+  return list
+    .filter(nr => !section || nr.section===section)
+    .filter(nr => inspOrAll==="ALL" || nr.inspection===inspOrAll)
+    .reduce((a,nr)=> a + num(nr.mh), 0);
+}
+
+function setKPIs(){
+  const kpiP = document.getElementById("kpiProgress");
+  const bar = document.getElementById("barProgress");
+  const kpiMH = document.getElementById("kpiMH");
+
+  if(!wp){
+    kpiP.textContent = "0%";
+    bar.style.width = "0%";
+    kpiMH.textContent = "0.0";
+    return;
+  }
+
+  const allExec = Object.values(wp.task_exec || {});
+  const overallPct = calcPct(allExec);
+  kpiP.textContent = fmtPct(overallPct);
+  bar.style.width = `${Math.round(overallPct)}%`;
+
+  const totalMH = sumMH(allExec) + sumNRMH(null,"ALL");
+  kpiMH.textContent = totalMH.toFixed(1);
+}
+
+/** =========================
+ *  EVENTS (mutations)
+ *  ========================= */
+function onToggleDone(key, checked){
+  if(!wp?.task_exec?.[key]) return;
+  wp.task_exec[key].done = !!checked;
+  saveWpToStorage();
+  render();
+}
+function onSetMH(key, value){
+  if(!wp?.task_exec?.[key]) return;
+  wp.task_exec[key].mh = value;
+  saveWpToStorage();
+  setKPIs();
+}
+function onToggleNR(nrKey, checked){
+  const nr = (wp.non_routine||[]).find(x => x.__key === nrKey);
+  if(!nr) return;
+  nr.done = !!checked;
+  saveWpToStorage();
+  render();
+}
+function onSetNRMH(nrKey, value){
+  const nr = (wp.non_routine||[]).find(x => x.__key === nrKey);
+  if(!nr) return;
+  nr.mh = value;
+  saveWpToStorage();
+  setKPIs();
+}
+
+function addNonRoutine(){
+  if(!wp){
+    alert("Load a Work Package first.");
+    return;
+  }
+  const section = document.getElementById("nrSection").value.trim();
+  const nr_no = document.getElementById("nrNo").value.trim();
+  const desc = document.getElementById("nrDesc").value.trim();
+  const inspection = document.getElementById("nrInsp").value.trim();
+  const mh = document.getElementById("nrMH").value;
+
+  if(!desc){
+    alert("NR description is required.");
+    return;
+  }
+  if(!inspection){
+    alert("Select related inspection.");
+    return;
+  }
+
+  const nr = {
+    __key: `NR::${Date.now()}::${Math.random().toString(16).slice(2)}`,
+    nr_no,
+    section,
+    inspection,
+    desc,
+    mh: mh ?? "",
+    done: false,
+    created_at: nowISO()
+  };
+  wp.non_routine.push(nr);
+
+  // reset inputs
+  document.getElementById("nrNo").value = "";
+  document.getElementById("nrDesc").value = "";
+  document.getElementById("nrMH").value = "";
+
+  saveWpToStorage();
+  render();
+}
+
+/** =========================
+ *  BUTTONS
+ *  ========================= */
+document.getElementById("btnLoad").onclick = () => {
+  if(!library){
+    alert("Library not loaded yet.");
+    return;
+  }
+  const selected = Array.from(document.getElementById("inspSelect").selectedOptions).map(o => o.value);
+  if(selected.length === 0){
+    alert("Select at least one inspection.");
+    return;
+  }
+  wp = buildWorkPackage(selected);
+  saveWpToStorage();
+  activeTab = "ALL";
+  render();
+};
+
+document.getElementById("btnSave").onclick = () => {
+  if(!wp){ alert("Nothing to save."); return; }
+  // update aircraft fields then save
+  wp.aircraft.reg = document.getElementById("acReg").value.trim();
+  wp.aircraft.sn  = document.getElementById("acSN").value.trim();
+  wp.aircraft.tt  = document.getElementById("acTT").value.trim();
+  wp.aircraft.tc  = document.getElementById("acTC").value.trim();
+  saveWpToStorage();
+  alert("Saved (browser).");
+};
+
+document.getElementById("btnClear").onclick = () => {
+  if(!confirm("Clear Work Package from this browser?")) return;
+  wp = null;
+  clearWpStorage();
+  activeTab = "ALL";
+  render();
+};
+
+document.getElementById("btnAddNR").onclick = () => addNonRoutine();
+
+/** =========================
+ *  INIT
+ *  ========================= */
+function restoreWP(){
+  const saved = loadWpFromStorage();
+  if(!saved) return;
+
+  wp = saved;
+  // restore aircraft fields
+  document.getElementById("acReg").value = wp.aircraft?.reg || "";
+  document.getElementById("acSN").value  = wp.aircraft?.sn || "";
+  document.getElementById("acTT").value  = wp.aircraft?.tt || "";
+  document.getElementById("acTC").value  = wp.aircraft?.tc || "";
+
+  // restore selected inspections in selector after library loads
+  activeTab = "ALL";
+}
+
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+}
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,"&quot;"); }
+
+(async function init(){
+  try{
+    restoreWP();
+    await loadLibrary();
+
+    // After library is loaded, select inspections that were saved (if any)
+    if(wp?.selected_inspections?.length){
+      const sel = document.getElementById("inspSelect");
+      const wanted = new Set(wp.selected_inspections);
+      for(const opt of sel.options){
+        opt.selected = wanted.has(opt.value);
+      }
+      // also set NR inspection list default
+      document.getElementById("nrInsp").value = wp.selected_inspections[0] || "";
+      render();
+    }
+  }catch(e){
+    alert("Dashboard error: " + e.message);
+    console.error(e);
+  }
+})();
+</script>
 </body>
 </html>
