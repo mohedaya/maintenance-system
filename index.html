@@ -53,7 +53,6 @@ button {
 
 <script>
 let libraryData = null;
-
 fetch("library/inspection_library.json")
 .then(res => {
     if (!res.ok) throw new Error("Library fetch failed");
