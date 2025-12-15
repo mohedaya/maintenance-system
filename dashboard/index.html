@@ -1,1 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AW139 Maintenance Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { margin-bottom: 10px; }
+    .section { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
+    .task { display: flex; gap: 10px; margin: 5px 0; }
+    .task input[type="number"] { width: 70px; }
+  </style>
+</head>
+<body>
 
+<h1>AW139 Maintenance Dashboard</h1>
+
+<label><b>Select Inspection(s):</b></label><br>
+<select id="inspectionSelect" multiple size="8"></select>
+<br><br>
+<button onclick="loadTasks()">Load Tasks</button>
+
+<hr>
+
+<div id="tasksContainer"></div>
+
+<script>
+const LIBRARY_URL = "../library/library.json";
+let libraryData = {};
+let workData = {};
+
+fetch(LIBRARY_URL)
+  .then(res => res.json())
+  .then(data => {
+    libraryData = data.inspections;
+    const select = document.getElementById("inspectionSelect");
+    Object.keys(libraryData).forEach(ins => {
+      const opt = document.createElement("option");
+      opt.value = ins;
+      opt.textContent = ins;
+      select.appendChild(opt);
+    });
+  });
+
+function loadTasks() {
+  const container = document.getElementById("tasksContainer");
+  container.innerHTML = "";
+  workData = {};
+
+  const selected = Array.from(
+    document.getElementById("inspectionSelect").selectedOptions
+  ).map(o => o.value);
+
+  selected.forEach(ins => {
+    const sections = libraryData[ins].sections;
+    Object.keys(sections).forEach(sec => {
+      if (!workData[sec]) workData[sec] = [];
+      sections[sec].forEach(task => {
+        if (!workData[sec].some(t => t.task_id === task.task_id)) {
+          workData[sec].push({ ...task, done: false, mh: 0 });
+        }
+      });
+    });
+  });
+
+  Object.keys(workData).forEach(sec => {
+    const div = document.createElement("div");
+    div.className = "section";
+    div.innerHTML = `<h3>${sec}</h3>`;
+    workData[sec].forEach(task => {
+      div.innerHTML += `
+        <div class="task">
+          <input type="checkbox" onchange="task.done=this.checked">
+          <span>${task.task_id} - ${task.description}</span>
+          <input type="number" placeholder="MH" min="0" step="0.1"
+                 onchange="task.mh=this.value">
+        </div>`;
+    });
+    container.appendChild(div);
+  });
+}
+</script>
+
+</body>
+</html>
